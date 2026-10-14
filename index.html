@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ID Card Builder</title>
+  <style>
+    :root { color-scheme: light; --ink: #043508; --muted: #718096; --blue: #246bce; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #4aa8d0; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header { padding: 28px 7vw; background: rgb(11, 73, 19); border-bottom: 1px solid #5792d6; }
+    header h1 { margin: 0; font-size: 1.35rem; letter-spacing: -.03em; }
+    header p { margin: 5px 0 0; color: var(--muted); font-size: .92rem; }
+    main { display: grid; grid-template-columns: minmax(280px, 390px) minmax(320px, 1fr); gap: clamp(28px, 7vw, 100px); max-width: 1120px; margin: 58px auto; padding: 0 28px; align-items: start; }
+    .form-panel h2, .preview h2 { margin: 0 0 7px; font-size: 1.25rem; }
+    .intro { margin: 0 0 25px; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+    label { display: block; margin: 15px 0 7px; font-size: .85rem; font-weight: 650; }
+    input { width: 100%; border: 1px solid #0e3d15; border-radius: 9px; background: rgb(11, 85, 32); padding: 11px 12px; color: var(--ink); font: inherit; outline: none; }
+    input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #efb20a1c; }
+    input[type=file] { padding: 8px; font-size: .85rem; }
+    .actions { display: flex; gap: 10px; margin-top: 22px; }
+    button { border: 0; border-radius: 9px; padding: 11px 17px; background: var(--blue); color: rgb(192, 231, 50); font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+    button.secondary { background: rgb(129, 140, 213); color: var(--ink); border: 1px solid #eae664; }
+    .preview { min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border-radius: 18px; background: #062650; }
+    .preview h2 { align-self: flex-start; margin-bottom: 24px; }
+    .card { position: relative; overflow: hidden; width: min(100%, 540px); min-height: 300px; border: 1px solid #aaca4b; border-radius: 15px; background: #a9a148; box-shadow: 0 20px 48px #263c3a25; }
+    .card-top { position: relative; display: grid; grid-template-columns: 65px 1fr 65px; gap: 7px; align-items: center; min-height: 100px; padding: 12px 18px 8px; border-bottom: 3px solid #b94f63; background: #ae9e3f; text-align: center; }
+    .brand-mark { width: 57px; height: 57px; display: block; object-fit: contain; }
+    .org { color: #a54253; font-family: Georgia,"Times New Roman",serif; font-size: 1.05rem; font-weight: 800; line-height: 1.1; text-transform: uppercase; }
+    .suborg { margin-top: 5px; color: #a54253; font-family: Georgia,"Times New Roman",serif; font-size: .8rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .tag { margin-top: 5px; color: #558568; font-size: .67rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .card-body { position: relative; display: grid; grid-template-columns: 1fr 122px; gap: 13px; align-items: center; min-height: 155px; padding: 15px 20px 13px; background: linear-gradient(110deg,#fffef4,#f6f5dc); }
+    .avatar { grid-column: 2; grid-row: 1; width: 112px; height: 132px; display: grid; place-items: center; overflow: hidden; border: 3px solid #bf7182; border-radius: 13px; background: linear-gradient(145deg, #eaf2fc, #dce8f5); color: #4775a4; font-size: 2rem; font-weight: 700; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .person { min-width: 0; }
+    .person { grid-column: 1; grid-row: 1; }
+    .person h3 { margin: 0 0 8px; overflow-wrap: anywhere; color: #263542; font-size: 1.02rem; letter-spacing: .015em; text-transform: uppercase; }
+    .detail { display: grid; grid-template-columns: 82px 1fr; gap: 5px; margin-top: 5px; color: #5b6570; font-size: .67rem; line-height: 1.25; }
+    .detail b { color: #596675; font-size: .61rem; letter-spacing: .05em; }
+    .detail span { color: #37414a; font-weight: 650; }
+    .id-number { margin-top: 5px; color: #5b6570; font-size: .61rem; font-weight: 700; letter-spacing: .04em; }
+    .id-number strong { display: inline; margin: 0 0 0 5px; color: #37414a; font-size: .67rem; letter-spacing: .02em; }
+    .card-footer { position: relative; display: flex; align-items: center; justify-content: center; min-height: 39px; padding: 7px 15px; color: white; background: linear-gradient(100deg,#64b989,#338b65); font-family: Georgia,serif; font-size: .78rem; font-style: italic; font-weight: 700; text-align: center; }
+    .card-bottom { display: none; }
+    .hint { margin: 16px 0 0; color: #0a4417; font-size: .8rem; text-align: center; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; margin: 35px auto; } .preview { min-height: 350px; padding: 22px 16px; } }
+    @media (max-width: 430px) { .card-top { grid-template-columns: 46px 1fr 46px; padding: 10px 9px 7px; } .brand-mark { width: 42px; height: 42px; } .org { font-size: .78rem; } .suborg { font-size: .65rem; } .tag { font-size: .53rem; } .card-body { grid-template-columns: 1fr 88px; gap: 7px; padding: 12px 11px; } .avatar { width: 83px; height: 105px; } .person h3 { font-size: .82rem; } .detail { grid-template-columns: 63px 1fr; font-size: .58rem; } .detail b, .id-number { font-size: .53rem; } .id-number strong { font-size: .58rem; } }
+    @media print { body { background: rgb(3, 50, 6); } header, .form-panel, .preview h2, .hint { display: none !important; } main { display: block; margin: 0; padding: 0; } .preview { min-height: 0; padding: 0; background: rgb(170, 187, 48); } .card { box-shadow: none; border: 1px solid #d6dce5; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simple ID Card Builder</h1>
+    <p>Enter a few details and preview your card.</p>
+  </header>
+  <main>
+    <section class="form-panel" aria-labelledby="details-title">
+      <h2 id="details-title">Card details</h2>
+      <p class="intro">Fill in the fields below. Your preview updates as you type.</p>
+      <form id="card-form">
+        <label for="school">University</label>
+        <input id="school" value="">
+        <label for="organization">School </label>
+        <input id="organization" value="">
+        <label for="name">Full name</label>
+        <input id="name" value="" autocomplete="name">
+        <label for="id">Registration number</label>
+        <input id="id" value="" autocomplete="off">
+        <label for="course">Course / program</label>
+        <input id="course" value="">
+        <label for="department">Department</label>
+        <input id="department" value="">
+        <label for="validity">Validity</label>
+        <input id="validity" value="">
+        <label for="photo">Photo (optional)</label>
+        <input id="photo" type="file" accept="image/*">
+        <div class="actions">
+          <button type="button" id="print">Print card</button>
+          <button type="reset" class="secondary">Reset</button>
+        </div>
+      </form>
+    </section>
+    <section class="preview" aria-labelledby="preview-title">
+      <h2 id="preview-title">Live preview</h2>
+      <article class="card" aria-label="ID card preview">
+        <div class="card-top"><img class="brand-mark" src="assets/university-icon.png" alt="University crest"><div><div class="org" id="card-school">Your University</div><div class="suborg" id="card-org">School of Technology</div><div class="tag">Student Identity Card</div></div><div></div></div>
+        <div class="card-body">
+          <div class="avatar" id="avatar" aria-label="Photo placeholder">A</div>
+          <div class="person">
+            <h3 id="card-name">name</h3>
+            <div class="detail"><b>REG. NO.</b><span id="card-id"></span></div>
+            <div class="detail"><b>COURSE</b><span id="card-course"></span></div>
+            <div class="detail"><b>DEPT.</b><span id="card-department"></span></div>
+            <div class="detail"><b>VALIDITY</b><span id="card-validity"></span></div>
+          </div>
+        </div>
+        <div class="card-footer">Better life through technology</div>
+        <div class="card-bottom"></div>
+      </article>
+      <p class="hint">Use “Print card” to print or save as PDF.</p>
+    </section>
+  </main>
+  <script>
+    const fields = {
+      name: document.querySelector('#name'),
+      school: document.querySelector('#school'),
+      organization: document.querySelector('#organization'),
+      id: document.querySelector('#id'),
+      course: document.querySelector('#course'),
+      department: document.querySelector('#department'),
+      validity: document.querySelector('#validity')
+    };
+    const outputs = {
+      name: document.querySelector('#card-name'),
+      school: document.querySelector('#card-school'),
+      organization: document.querySelector('#card-org'),
+      id: document.querySelector('#card-id'),
+      course: document.querySelector('#card-course'),
+      department: document.querySelector('#card-department'),
+      validity: document.querySelector('#card-validity')
+    };
+    const avatar = document.querySelector('#avatar');
+    function updateCard() {
+      outputs.name.textContent = fields.name.value.trim() || '';
+      outputs.school.textContent = fields.school.value.trim() || '';
+      outputs.organization.textContent = fields.organization.value.trim() || '';
+      outputs.id.textContent = fields.id.value.trim() || '—';
+      outputs.course.textContent = fields.course.value.trim() || '—';
+      outputs.department.textContent = fields.department.value.trim() || '—';
+      outputs.validity.textContent = fields.validity.value.trim() || '—';
+      if (!avatar.querySelector('img')) avatar.textContent = (fields.name.value.trim()[0] || '?').toUpperCase();
+    }
+    Object.values(fields).forEach(field => field.addEventListener('input', updateCard));
+    document.querySelector('#photo').addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const image = document.createElement('img');
+      image.alt = 'Uploaded profile photo';
+      image.src = URL.createObjectURL(file);
+      avatar.replaceChildren(image);
+    });
+    document.querySelector('#print').addEventListener('click', () => window.print());
+    document.querySelector('#card-form').addEventListener('reset', () => {
+      setTimeout(() => { avatar.replaceChildren(); updateCard(); }, 0);
+    });
+  </script>
+</body>
+</html>
