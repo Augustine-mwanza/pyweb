@@ -43,6 +43,12 @@
     .card-footer { position: relative; display: flex; align-items: center; justify-content: center; min-height: 39px; padding: 7px 15px; color: white; background: linear-gradient(100deg,#64b989,#338b65); font-family: Georgia,serif; font-size: .78rem; font-style: italic; font-weight: 700; text-align: center; }
     .card-bottom { display: none; }
     .hint { margin: 16px 0 0; color: #0a4417; font-size: .8rem; text-align: center; }
+    dialog { width: min(92vw, 440px); border: 1px solid #5792d6; border-radius: 16px; padding: 24px; color: var(--ink); background: #fff; box-shadow: 0 24px 80px #001b3280; }
+    dialog::backdrop { background: #001426b8; }
+    dialog h2 { margin: 0 0 12px; font-size: 1.2rem; }
+    dialog p { line-height: 1.5; }
+    .payment-instructions { padding: 14px; border-radius: 10px; background: #eef7ef; }
+    .payment-note { color: #725400; font-size: .84rem; }
     @media (max-width: 760px) { main { grid-template-columns: 1fr; margin: 35px auto; } .preview { min-height: 350px; padding: 22px 16px; } }
     @media (max-width: 430px) { .card-top { grid-template-columns: 46px 1fr 46px; padding: 10px 9px 7px; } .brand-mark { width: 42px; height: 42px; } .org { font-size: .78rem; } .suborg { font-size: .65rem; } .tag { font-size: .53rem; } .card-body { grid-template-columns: 1fr 88px; gap: 7px; padding: 12px 11px; } .avatar { width: 83px; height: 105px; } .person h3 { font-size: .82rem; } .detail { grid-template-columns: 63px 1fr; font-size: .58rem; } .detail b, .id-number { font-size: .53rem; } .id-number strong { font-size: .58rem; } }
     @media print { body { background: rgb(3, 50, 6); } header, .form-panel, .preview h2, .hint { display: none !important; } main { display: block; margin: 0; padding: 0; } .preview { min-height: 0; padding: 0; background: rgb(170, 187, 48); } .card { box-shadow: none; border: 1px solid #d6dce5; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
@@ -100,7 +106,26 @@
       <p class="hint">Use “Print card” to print or save as PDF.</p>
     </section>
   </main>
+  <dialog id="payment-dialog" aria-labelledby="payment-title">
+    <form id="payment-form">
+      <h2 id="payment-title">Pay by M-Pesa</h2>
+      <div class="payment-instructions">
+        <p>On your phone, open M-Pesa and choose <strong>Lipa na M-Pesa → Buy Goods and Services</strong>.</p>
+        <p><strong>Till number:</strong> <span id="till-display"></span><br><strong>Amount:</strong> <span id="price-display"></span></p>
+      </div>
+      <p class="payment-note">After paying, enter the M-Pesa transaction code below. This page does not verify or send the code; keep your M-Pesa confirmation for manual payment checking.</p>
+      <label for="transaction-code">M-Pesa transaction code</label>
+      <input id="transaction-code" name="transactionCode" required maxlength="20" autocomplete="off" placeholder="e.g. QJK7ABC123">
+      <div class="actions">
+        <button type="submit">Continue to print</button>
+        <button type="button" id="cancel-payment" class="secondary">Cancel</button>
+      </div>
+    </form>
+  </dialog>
   <script>
+    // Set these before accepting payments. The transaction code is collected for manual checking only.
+    const PAYMENT_TILL_NUMBER = '3571106';
+    const CARD_PRICE_KSH = 455;
     const fields = {
       name: document.querySelector('#name'),
       school: document.querySelector('#school'),
@@ -140,7 +165,25 @@
       image.src = URL.createObjectURL(file);
       avatar.replaceChildren(image);
     });
-    document.querySelector('#print').addEventListener('click', () => window.print());
+    const paymentDialog = document.querySelector('#payment-dialog');
+    document.querySelector('#till-display').textContent = PAYMENT_TILL_NUMBER;
+    document.querySelector('#price-display').textContent = `KSh ${CARD_PRICE_KSH}`;
+    document.querySelector('#print').addEventListener('click', () => paymentDialog.showModal());
+    document.querySelector('#cancel-payment').addEventListener('click', () => paymentDialog.close());
+    document.querySelector('#payment-form').addEventListener('submit', event => {
+      event.preventDefault();
+      if (PAYMENT_TILL_NUMBER === 'SET_YOUR_TILL_NUMBER' || CARD_PRICE_KSH <= 0) {
+        alert('Payment setup is incomplete. Set the Till number and card price first.');
+        return;
+      }
+      const transactionCode = document.querySelector('#transaction-code').value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{8,20}$/.test(transactionCode)) {
+        alert('Enter a valid M-Pesa transaction code.');
+        return;
+      }
+      paymentDialog.close();
+      window.print();
+    });
     document.querySelector('#card-form').addEventListener('reset', () => {
       setTimeout(() => { avatar.replaceChildren(); updateCard(); }, 0);
     });
